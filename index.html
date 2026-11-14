@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Season Structure Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Plan: a plain analysis tool. Inputs panel on the left, results on the right, hairline rules, one blue for "the design you picked". Sans for words, mono for numbers. */
+:root{
+  --bg:#f4f5f7; --panel:#ffffff; --ink:#1b2027; --muted:#5a6572; --line:#dde1e6;
+  --accent:#1f5fa8; --accent-soft:#e5eef9; --ref:#6b7480; --bar:#b7bfc9; --bar-soft:#e8ebef; --warn:#a4480f;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#101418; --panel:#171c22; --ink:#e6eaee; --muted:#9aa5b1; --line:#2a323b;
+    --accent:#6aa6e8; --accent-soft:#1c2c40; --ref:#8d97a3; --bar:#46515d; --bar-soft:#242c35; --warn:#e6a06b;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101418; --panel:#171c22; --ink:#e6eaee; --muted:#9aa5b1; --line:#2a323b;
+  --accent:#6aa6e8; --accent-soft:#1c2c40; --ref:#8d97a3; --bar:#46515d; --bar-soft:#242c35; --warn:#e6a06b;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.page{max-width:1120px;margin:0 auto;padding:24px 16px 56px}
+header.top{padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+h1{font:600 26px/1.25 var(--body);margin:0 0 6px;text-wrap:balance}
+h2{font:600 17px/1.3 var(--body);margin:0}
+h3{font:600 12px/1.3 var(--body);margin:0;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+p{margin:0}
+a{color:var(--accent)}
+.sub{color:var(--muted);max-width:70ch}
+.layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:24px;align-items:start}
+aside.inputs{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:16px;display:flex;flex-direction:column;gap:16px}
+main{display:flex;flex-direction:column;gap:20px;min-width:0}
+section.out{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.sechead{display:flex;flex-direction:column;gap:4px}
+.sechead p{color:var(--muted);max-width:68ch;font-size:14px}
+.note{font-size:13px;color:var(--muted);max-width:76ch}
+.def{border:1px solid var(--line);background:var(--bg);border-radius:4px;padding:12px 14px;font-size:14px;max-width:76ch}
+.def b{font-weight:600}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* inputs */
+.radios{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.radios button{display:grid;grid-template-columns:22px 1fr;gap:8px;text-align:left;font:400 14px/1.35 var(--body);padding:10px 12px;border:0;border-top:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.radios button:first-child{border-top:0}
+.radios button .k{font:600 14px var(--mono);color:var(--muted)}
+.radios button b{font-weight:600;display:block}
+.radios button small{color:var(--muted);font-size:12.5px}
+.radios button[aria-checked="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.radios button[aria-checked="true"] .k{color:var(--accent)}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl .head{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.ctl label{font:500 13.5px/1.35 var(--body)}
+.ctl .val{font:500 14px var(--mono)}
+.ctl .help{font-size:12.5px;color:var(--muted);line-height:1.4}
+input[type=range]{width:100%;accent-color:var(--accent);height:24px;margin:0}
+select{font:400 14px var(--body);padding:7px 8px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--ink);width:100%}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:500 13.5px/1 var(--body);padding:9px 12px;border-radius:4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0b1624}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#0b1624}}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+
+/* result */
+.headline{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:baseline}
+.num{font:600 38px/1.1 var(--mono);color:var(--accent);font-variant-numeric:tabular-nums}
+.headline .cap{color:var(--muted);max-width:50ch;font-size:14px}
+.headline .cap b{color:var(--ink);font-weight:600}
+.reading{max-width:72ch}
+.rows{display:flex;flex-direction:column}
+.gh{margin:12px 0 2px;padding-top:10px;border-top:1px solid var(--line)}
+.rows .gh:first-child{margin-top:0;border-top:0;padding-top:0}
+.row-b{display:grid;grid-template-columns:minmax(120px,230px) 1fr 84px;align-items:center;gap:12px;padding:5px 6px;border:0;background:none;color:var(--ink);font:400 13.5px/1.3 var(--body);text-align:left;cursor:pointer;width:100%;border-radius:3px}
+.row-b:hover{background:var(--bg)}
+.row-b[aria-pressed="true"]{background:var(--accent-soft)}
+.track{position:relative;height:14px;background:var(--bar-soft)}
+.fill{position:absolute;left:0;top:0;bottom:0;background:var(--bar)}
+.range{position:absolute;top:5px;height:4px;background:var(--bar)}
+.dot{position:absolute;top:2px;width:10px;height:10px;border-radius:50%;background:var(--bar);transform:translateX(-5px)}
+.row-b[aria-pressed="true"] .fill,.row-b[aria-pressed="true"] .range,.row-b[aria-pressed="true"] .dot{background:var(--accent)}
+.base{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1.5px dashed var(--ref)}
+.row-b .v{font:500 13px var(--mono);text-align:right}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;border-top:1.5px dashed var(--ref);vertical-align:middle;margin-right:6px}
+
+/* cost */
+details.assump{border:1px solid var(--line);border-radius:4px}
+details.assump>summary{cursor:pointer;padding:10px 14px;font:500 14px var(--body);list-style:none;display:flex;justify-content:space-between;gap:12px}
+details.assump>summary::after{content:"Show";color:var(--accent);font-size:13px}
+details.assump[open]>summary::after{content:"Hide"}
+details.assump>summary::-webkit-details-marker{display:none}
+.assump-body{padding:6px 14px 16px;display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line)}
+.assump-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px 28px}
+.assump-cols>div{display:flex;flex-direction:column;gap:14px}
+.presets{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:10px}
+.costbars{display:flex;flex-direction:column;gap:10px}
+.cb{display:grid;grid-template-columns:150px 1fr 76px;gap:12px;align-items:center;font-size:13.5px}
+.cb .track{height:22px}
+.cb .fill{background:var(--accent)}
+.cb.b .fill{background:var(--warn)}
+.cb .whisk{position:absolute;top:10px;height:2px;background:var(--ink);opacity:.5}
+.cb .cap{position:absolute;top:5px;height:12px;width:0;border-left:2px solid var(--ink);opacity:.5}
+.cb .v{font:500 13px var(--mono);text-align:right}
+dl.figs{margin:0;display:grid;grid-template-columns:1fr;gap:0;border-top:1px solid var(--line)}
+dl.figs>div{display:grid;grid-template-columns:minmax(0,1fr) 190px;gap:14px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13.5px}
+dl.figs dt{color:var(--muted)}
+dl.figs dd{margin:0;font:500 14px var(--mono);text-align:right}
+
+/* season */
+.transport{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.transport select{width:auto}
+.readout{font:500 13px var(--mono);color:var(--muted)}
+.watch{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px}
+.ladder{position:relative;height:calc(15*28px);margin-top:6px}
+.lrow{position:absolute;left:0;right:0;height:26px;display:grid;grid-template-columns:38px 1fr 58px;gap:8px;align-items:center;transition:transform .32s ease;font:500 12.5px var(--mono);padding:0 4px;border-radius:2px}
+.lrow .bar{height:10px;background:var(--bar-soft);position:relative}
+.lrow .bar>span{position:absolute;left:0;top:0;bottom:0;background:var(--bar);transition:width .32s ease}
+.lrow.hot{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.lrow.hot .bar>span{background:var(--accent)}
+.lrow .wl{text-align:right;color:var(--muted)}
+.cut{position:absolute;left:0;right:0;border-top:1px dashed var(--ref);opacity:.6;pointer-events:none}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{border:1px solid var(--line);border-radius:4px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.tile .n{font:600 24px/1.15 var(--mono);font-variant-numeric:tabular-nums}
+.tile .c{font-size:12.5px;color:var(--muted);line-height:1.35}
+.strip{width:100%;height:auto;display:block}
+.agg{font-size:13.5px;min-height:1.5em}
+.limits{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 28px}
+.limits p{font-size:13.5px;color:var(--muted)}
+.limits b{color:var(--ink);font-weight:600}
+@media (max-width:860px){
+  .layout{grid-template-columns:1fr}
+  aside.inputs{position:static}
+  .assump-cols,.watch{grid-template-columns:1fr}
+  .row-b{grid-template-columns:1fr 72px;grid-template-areas:"l v" "t t"}
+  .row-b .l{grid-area:l}.row-b .track{grid-area:t}.row-b .v{grid-area:v}
+  .cb{grid-template-columns:1fr 70px;grid-template-areas:"n v" "t t"}
+  .cb .name{grid-area:n}.cb .track{grid-area:t}.cb .v{grid-area:v}
+}
+@media (prefers-reduced-motion:reduce){.lrow,.lrow .bar>span{transition:none}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+  <h1>NBA season structure simulator</h1>
+  <p class="sub">Can a different schedule make late-season games matter more, and what would it cost? Choose a schedule on the left. The results update on the right. This is the interactive companion to my written study, which is linked in the project README.</p>
+</header>
+
+<div class="layout">
+
+<aside class="inputs" aria-label="Schedule inputs">
+  <div class="ctl">
+    <h3>Schedule to test</h3>
+  </div>
+  <div class="radios" role="radiogroup" aria-label="Schedule design" id="seg">
+    <button type="button" role="radio" data-d="A"><span class="k">A</span><span><b>Current schedule</b><small>82 games per team, as today.</small></span></button>
+    <button type="button" role="radio" data-d="B"><span class="k">B</span><span><b>Shorter season</b><small>72 games. Ten fewer per team, five fewer at home.</small></span></button>
+    <button type="button" role="radio" data-d="C"><span class="k">C</span><span><b>Matched finish</b><small>Still 82 games, but each team's last <span id="kinline">4</span> are against teams near it in the standings.</small></span></button>
+  </div>
+  <div class="ctl" id="kctl">
+    <div class="head"><label for="k">Matched games per team (K)</label><span class="val" id="kval">4</span></div>
+    <input type="range" id="k" min="0" max="10" step="2" value="4">
+    <p class="help">Even numbers only, because 15 teams cannot all play an odd number of games. K = 4 takes the place of the four NBA Cup group games each team plays now.</p>
+  </div>
+  <div class="ctl" id="rulectl" hidden>
+    <label for="rule">Which games get cut</label>
+    <select id="rule">
+      <option value="random">Random games</option>
+      <option value="cross">Cross-conference games first</option>
+      <option value="conf">Conference games only (the Cup-cut idea)</option>
+    </select>
+    <p class="help">A 72-game season has to drop ten games from the current schedule. This picks which ten.</p>
+  </div>
+</aside>
+
+<main>
+
+<section class="out" aria-labelledby="h-race">
+  <div class="sechead">
+    <h2 id="h-race">1. Do the late games become seed races?</h2>
+    <p>Fans pay more attention when a game can change the playoff picture. This counts how often that happens in the final third of the season.</p>
+  </div>
+  <div class="def"><b>Seed-race game:</b> a game in the last third of the season between two teams from the same conference who are within 1 game of each other in the standings. Example: the 5th and 6th seeds, half a game apart, play each other in April.</div>
+  <div class="headline">
+    <div class="num" id="bigval">6.8%</div>
+    <p class="cap" id="bigcap"></p>
+  </div>
+  <p class="reading" id="verdict"></p>
+  <div class="rows" id="rows" role="group" aria-label="Seed-race share by schedule. Select a row to choose that schedule."></div>
+  <div class="legend"><span><i></i>Current schedule (4.3%)</span><span>Dots on a 72-game row mark the two ways to read a 0.88-game gap</span></div>
+  <p class="note">Each result comes from 75 to 150 simulated seasons that replay the real 2021-22 to 2025-26 schedules with random game results. The simulation runs about 18% low against real seasons, so compare the schedules to each other rather than treating any number as a forecast. Select any row to switch to it.</p>
+</section>
+
+<section class="out" aria-labelledby="h-cost">
+  <div class="sechead">
+    <h2 id="h-cost">2. What does each schedule cost the owners?</h2>
+    <p>Fewer games means fewer tickets to sell. The matched finish keeps all 82 games, so its only cost is the NBA Cup money it displaces. Figures are per team, per year, after the players' share.</p>
+  </div>
+  <div class="costbars" id="costbars" aria-live="polite"></div>
+  <dl class="figs" id="figs"></dl>
+  <details class="assump" open>
+    <summary>Revenue assumptions (team revenue is not public, so these are estimates you can change)</summary>
+    <div class="assump-body">
+      <div class="presets">
+        <span class="note">Start from:</span>
+        <button type="button" class="btn" data-p="low">Low loss</button>
+        <button type="button" class="btn" data-p="base">Base</button>
+        <button type="button" class="btn" data-p="high">High loss</button>
+      </div>
+      <div class="assump-cols">
+        <div>
+          <h3>Schedule B: 72 games</h3>
+          <div class="ctl"><div class="head"><label for="ns">National TV and media that shrinks with fewer games</label><span class="val" id="nsv"></span></div><input type="range" id="ns" min="0" max="100" step="5"><p class="help">The league's TV deal is about $6.9B a year. At 0% it stays the same no matter how many games are played.</p></div>
+          <div class="ctl"><div class="head"><label for="ss">Sponsorship that shrinks</label><span class="val" id="ssv"></span></div><input type="range" id="ss" min="0" max="100" step="5"><p class="help">Share of the $1.9B in sponsorship that would drop with ten fewer games.</p></div>
+          <div class="ctl"><div class="head"><label for="os">All other revenue that shrinks</label><span class="val" id="osv"></span></div><input type="range" id="os" min="0" max="100" step="5"><p class="help">Local media, merchandise and the rest.</p></div>
+          <div class="ctl"><div class="head"><label for="pr">Lost ticket money won back with higher prices</label><span class="val" id="prv"></span></div><input type="range" id="pr" min="0" max="100" step="5"><p class="help">Teams selling 36 home games instead of 41 could charge more per game.</p></div>
+          <div class="ctl"><div class="head"><label for="gd">Ticket and arena revenue, whole league</label><span class="val" id="gdv"></span></div><input type="range" id="gd" min="2.5" max="4" step="0.05"><p class="help">Sources range from $2.5B to about $4B.</p></div>
+        </div>
+        <div>
+          <h3>Schedule C: matched finish</h3>
+          <div class="ctl"><div class="head"><label for="cv">What the NBA Cup is worth to the league each year</label><span class="val" id="cvv"></span></div><input type="range" id="cv" min="0" max="200" step="5"><p class="help">The sponsor's fee is not public, so $25M, $50M and $100M are placeholders. A reported $500M figure is the sponsor's own estimate of advertising value, not the fee.</p></div>
+          <div class="ctl"><div class="head"><label for="cr">Share of that a replacement event recovers</label><span class="val" id="crv"></span></div><input type="range" id="cr" min="0" max="100" step="5"><p class="help">If the matched finish were sponsored, some of the Cup's money could come back.</p></div>
+          <h3 style="margin-top:4px">Both schedules</h3>
+          <div class="ctl"><div class="head"><label for="ps">Players' share of any revenue change</label><span class="val" id="psv"></span></div><input type="range" id="ps" min="30" max="55" step="1"><p class="help">Players get roughly half of basketball revenue, which is about 40% of total revenue.</p></div>
+        </div>
+      </div>
+    </div>
+  </details>
+</section>
+
+<section class="out" aria-labelledby="h-watch">
+  <div class="sechead">
+    <h2 id="h-watch">3. Watch one season play out</h2>
+    <p>A single simulated season for a 15-team conference, using the schedule you picked. Press Play, or drag the slider to jump to any round. Highlighted teams are playing a seed-race game that round.</p>
+  </div>
+  <div class="transport">
+    <button type="button" class="btn primary" id="play">Play</button>
+    <button type="button" class="btn" id="newseason">New season</button>
+    <label class="note" for="speed" style="display:flex;align-items:center;gap:8px">Speed
+      <select id="speed"><option value="6">Slow</option><option value="14" selected>Normal</option><option value="32">Fast</option></select></label>
+    <span class="readout" id="readout"></span>
+  </div>
+  <div class="watch">
+    <div>
+      <h3>Standings (wins-losses)</h3>
+      <div class="ladder" id="ladder"></div>
+      <p class="note" style="margin-top:8px">Dashed lines: the top 6 teams clinch a playoff spot, 7th to 10th play in, and the rest miss out.</p>
+    </div>
+    <div class="side">
+      <div class="tiles">
+        <div class="tile"><span class="n" id="t-share">-</span><span class="c" id="t-sharecap">Seed-race share, last third</span></div>
+        <div class="tile"><span class="n" id="t-count">-</span><span class="c">Seed-race games so far in the last third</span></div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:6px">Seed-race games in each round</h3>
+        <svg class="strip" id="strip" viewBox="0 0 520 96" role="img" aria-label="Number of seed-race games in each round of the season"></svg>
+        <input type="range" id="scrub" min="0" max="82" value="82" step="1" aria-label="Scrub through the season">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button type="button" class="btn" id="run300" style="align-self:flex-start">Run 300 seasons of this schedule</button>
+        <p class="agg" id="agg"></p>
+      </div>
+    </div>
+  </div>
+  <p class="note">This is a simplified conference with made-up team strengths, not real ratings. Each round every team plays once, either a conference game or a cross-conference game against an average opponent. It uses the same home-court edge (2 points) and game-to-game randomness (13.5 points) as the main study, and its averages land close to the study's numbers in section 1.</p>
+</section>
+
+<section class="out" aria-labelledby="h-lim">
+  <h2 id="h-lim">What this does not show</h2>
+  <div class="limits">
+    <p><b>Whether closer races earn more money.</b> The case for the matched finish rests on a break-even calculation, not on evidence that those games draw bigger audiences.</p>
+    <p><b>The Cup's real value.</b> It is not public. Move the Cup sliders to see how much the answer depends on it.</p>
+    <p><b>Everything that makes a game matter besides the standings.</b> Stars, rivalries and storylines are not measured.</p>
+    <p><b>Fairness.</b> Matching by standings gives the top seeds a harder finish than the bottom seeds.</p>
+  </div>
+</section>
+
+</main>
+</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const S={design:'C',K:4,rule:'random',seed:7,t:null,playing:false,timer:null};
+
+/* Direct-race share (last third, gap 1) from the Colab simulation, in percent */
+const BASE=4.3;
+const RES={
+  B:{random:{lo:2.8,hi:5.0},cross:{lo:3.1,hi:5.5},conf:{lo:2.5,hi:4.3}},
+  C:{2:6.5,4:6.8,6:6.4,8:6.4,10:5.7}
+};
+const SCALE=8;
+
+function isSel(row){
+  if(row.d==='A')return S.design==='A'||(S.design==='C'&&S.K===0);
+  if(row.d==='B')return S.design==='B'&&S.rule===row.rule;
+  return S.design==='C'&&S.K===row.K;
+}
+function syncControls(){
+  document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.d===S.design)));
+  $('kinline').textContent=S.K;
+  $('kctl').hidden=S.design!=='C';
+  $('rulectl').hidden=S.design!=='B';
+  $('k').value=S.K;$('kval').textContent=S.K;$('rule').value=S.rule;
+}
+$('seg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.design=b.dataset.d;onDesign()});
+$('k').addEventListener('input',e=>{S.K=+e.target.value;onDesign()});
+$('rule').addEventListener('change',e=>{S.rule=e.target.value;onDesign()});
+
+function renderRace(){
+  let big,cap,verdict;
+  if(S.design==='A'||(S.design==='C'&&S.K===0)){
+    big=BASE.toFixed(1)+'%';cap='of last-third games are seed races. That is about 1 game in 23.';
+    verdict='This is today\'s schedule, and it is the yardstick for everything else on this page.';
+  }else if(S.design==='B'){
+    const r=RES.B[S.rule];
+    big=r.lo.toFixed(1)+'% to '+r.hi.toFixed(1)+'%';
+    cap='of last-third games are seed races, depending on how a 0.88-game gap is read.';
+    verdict='Cutting games does not reliably help. Ten fewer games shrinks the allowed gap from 1 game to 0.88, and standings only move in half-game steps, so the result lands anywhere between the 0.5-game reading and the 1-game reading. Today\'s '+BASE.toFixed(1)+'% falls inside the band for every way of cutting.';
+  }else{
+    const v=RES.C[S.K],d=v-BASE;
+    big=v.toFixed(1)+'%';
+    cap='of last-third games are seed races, <b>'+(d>=0?'+':'')+d.toFixed(1)+' points</b> against the current '+BASE.toFixed(1)+'%.';
+    if(S.K===4)verdict='Four matched games gives about 1.6 times as many seed races as today. Matched opponents end up 2.6 seeds apart on average, against 5.3 for random pairings.';
+    else if(S.K===10)verdict='Ten is the weakest matched option. With 10 of 14 possible opponents, nearly everyone plays nearly everyone, so matched opponents average 4.6 seeds apart, barely closer than random.';
+    else verdict='Anything from 2 to 8 matched games lands between 6.4% and 6.8%, which is within the simulation\'s noise. Four is the choice that replaces the Cup\'s group games one for one.';
+  }
+  $('bigval').textContent=big;$('bigcap').innerHTML=cap;$('verdict').textContent=verdict;
+
+  const rows=[
+    {g:'A · Current schedule'},
+    {d:'A',name:'82 games, as today',lo:BASE,hi:BASE},
+    {g:'B · 72 games, by which ten games are cut'},
+    {d:'B',rule:'random',name:'Random games',lo:RES.B.random.lo,hi:RES.B.random.hi},
+    {d:'B',rule:'cross',name:'Cross-conference games first',lo:RES.B.cross.lo,hi:RES.B.cross.hi},
+    {d:'B',rule:'conf',name:'Conference games only',lo:RES.B.conf.lo,hi:RES.B.conf.hi},
+    {g:'C · 82 games, last K games matched by standings'},
+    ...[2,4,6,8,10].map(k=>({d:'C',K:k,name:'K = '+k+(k===4?' (replaces the Cup)':''),lo:RES.C[k],hi:RES.C[k]}))
+  ];
+  const host=$('rows');host.textContent='';
+  rows.forEach(r=>{
+    if(r.g){const h=document.createElement('h3');h.className='gh';h.textContent=r.g;host.appendChild(h);return}
+    const b=document.createElement('button');b.type='button';b.className='row-b';b.setAttribute('aria-pressed',String(isSel(r)));
+    const range=r.lo!==r.hi;
+    const val=range?r.lo.toFixed(1)+'–'+r.hi.toFixed(1)+'%':r.lo.toFixed(1)+'%';
+    const p=x=>(x/SCALE*100)+'%';
+    b.innerHTML='<span class="l">'+r.name+'</span><span class="track">'
+      +(range?'<span class="range" style="left:'+p(r.lo)+';width:'+((r.hi-r.lo)/SCALE*100)+'%"></span><span class="dot" style="left:'+p(r.lo)+'"></span><span class="dot" style="left:'+p(r.hi)+'"></span>'
+             :'<span class="fill" style="width:'+p(r.lo)+'"></span>')
+      +'<span class="base" style="left:'+p(BASE)+'"></span></span><span class="v">'+val+'</span>';
+    b.addEventListener('click',()=>{S.design=r.d;if(r.d==='B')S.rule=r.rule;if(r.d==='C')S.K=r.K;onDesign()});
+    host.appendChild(b);
+  });
+}
+
+/* ---------- cost model (same arithmetic as the Google Sheet) ---------- */
+const TOTAL=14.3,NAT=6.9,SPON=1.9,TEAMS=30,GAMES=1230;
+const PRE={
+  low:{ns:0,ss:0,os:0,pr:75,gd:3.25,cv:25,cr:75,ps:40},
+  base:{ns:25,ss:25,os:25,pr:50,gd:3.25,cv:50,cr:50,ps:40},
+  high:{ns:50,ss:50,os:50,pr:25,gd:3.25,cv:100,cr:25,ps:40}
+};
+const A=Object.assign({},PRE.base);
+function costB(a){
+  const other=TOTAL-NAT-a.gd-SPON,lost=10/82;
+  const gross=(NAT*a.ns/100+a.gd+SPON*a.ss/100+other*a.os/100)*lost;
+  const back=a.gd*lost*a.pr/100;
+  const owners=(gross-back)*(1-a.ps/100);
+  return {team:owners/TEAMS*1000,league:owners*1000,pct:owners/TOTAL*100,priceRise:a.pr/100*(41/36-1)*100};
+}
+function costC(a){
+  const net=a.cv*(1-a.cr/100),owners=net*(1-a.ps/100);
+  const matched=15*S.K,avg=TOTAL*1000/GAMES;
+  return {team:owners/TEAMS,league:owners,pct:owners/1000/TOTAL*100,be:matched?net/matched:null,bePct:matched?net/matched/avg*100:null};
+}
+const $f=(x,d=1)=>'$'+x.toFixed(d)+'M';
+function renderCost(){
+  for(const k of ['ns','ss','os','pr','cr','ps']){$(k).value=A[k];$(k+'v').textContent=A[k]+'%'}
+  $('gd').value=A.gd;$('gdv').textContent='$'+A.gd.toFixed(2)+'B';
+  $('cv').value=A.cv;$('cvv').textContent='$'+A.cv+'M';
+  document.querySelectorAll('.presets .btn[data-p]').forEach(b=>{
+    const p=PRE[b.dataset.p];b.setAttribute('aria-pressed',String(Object.keys(p).every(k=>Math.abs(p[k]-A[k])<1e-9)));
+  });
+  const b=costB(A),c=costC(A),lo=[costB(PRE.low),costC(PRE.low)],hi=[costB(PRE.high),costC(PRE.high)];
+  const max=Math.max(hi[0].team,b.team,hi[1].team,c.team)*1.08,p=x=>(x/max*100)+'%';
+  const row=(cls,nm,v,l,h)=>'<div class="cb '+cls+'"><span class="name">'+nm+'</span><span class="track"><span class="fill" style="width:'+p(v)+'"></span>'
+    +'<span class="whisk" style="left:'+p(l)+';width:'+((h-l)/max*100)+'%"></span><span class="cap" style="left:'+p(l)+'"></span><span class="cap" style="left:'+p(h)+'"></span></span><span class="v">'+$f(v,v<2?2:1)+'</span></div>';
+  $('costbars').innerHTML='<h3>Owners\' net cost per team per year</h3>'
+    +row('b','B · 72 games',b.team,lo[0].team,hi[0].team)+row('c','C · matched finish',c.team,lo[1].team,hi[1].team)
+    +'<p class="note">The bar uses your assumptions below. The thin line spans the Low-to-High presets: '+$f(lo[0].team)+' to '+$f(hi[0].team)+' for B, and '+$f(lo[1].team,2)+' to '+$f(hi[1].team,1)+' for C.</p>';
+  const ratio=b.team/Math.max(c.team,1e-9);
+  const rows=[
+    ['B: cost across the whole league per year',$f(b.league,0)+' ('+b.pct.toFixed(1)+'% of revenue)'],
+    ['C: cost across the whole league per year',$f(c.league,1)+' ('+c.pct.toFixed(2)+'% of revenue)'],
+    ['B costs this many times as much as C',(ratio>=10?Math.round(ratio):ratio.toFixed(1))+'x'],
+    ['B: ticket price rise needed to win back the chosen share of lost gate money, with attendance unchanged',b.priceRise.toFixed(1)+'%'],
+    ['C: extra revenue each matched game must earn over an average game ($11.6M) to cover the lost Cup money',c.bePct==null?'Set K above 0':c.bePct.toFixed(1)+'% ('+$f(c.be,2)+')']
+  ];
+  $('figs').innerHTML=rows.map(r=>'<div><dt>'+r[0]+'</dt><dd>'+r[1]+'</dd></div>').join('');
+}
+['ns','ss','os','pr','gd','cv','cr','ps'].forEach(k=>$(k).addEventListener('input',e=>{A[k]=+e.target.value;renderCost()}));
+document.querySelectorAll('.presets .btn[data-p]').forEach(b=>b.addEventListener('click',()=>{Object.assign(A,PRE[b.dataset.p]);renderCost()}));
+
+/* ---------- toy conference engine ---------- */
+const N=15,EDGE=2,SPREAD=13.5;
+const ABBR=['ATL','BOS','BKN','CHA','CHI','CLE','DET','IND','MIA','MIL','NYK','ORL','PHI','TOR','WAS'];
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function randn(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r())}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function strengths(seed){const r=rng(seed*7919+13);return Array.from({length:N},()=>randn(r)*5.6)}
+function win(s,a,b,homeA,r){return s[a]-s[b]+(homeA?EDGE:-EDGE)+randn(r)*SPREAD>0}
+function matchEdges(order,K,r){
+  let best=null;
+  for(let t=0;t<60;t++){
+    const cap=new Array(N).fill(K),edges=[],pairs=[];
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)pairs.push([i,j,(j-i)+r()*1.6]);
+    pairs.sort((x,y)=>x[2]-y[2]);
+    for(const [i,j] of pairs){if(cap[i]>0&&cap[j]>0){cap[i]--;cap[j]--;edges.push([order[i],order[j]])}}
+    const miss=cap.reduce((x,y)=>x+y,0);
+    if(!best||miss<best.miss)best={miss,edges};
+    if(!miss)break;
+  }
+  return best.edges;
+}
+function season(design,K,seed,s){
+  const r=rng(seed*104729+K*31+(design.charCodeAt(0)));
+  s=s||strengths(seed);
+  const W=new Array(N).fill(0),L=new Array(N).fill(0);
+  const base=design==='B'?72:design==='C'?82-K:82;
+  const pConf=design==='C'?(52-K)/(82-K):52/82;
+  const days=[],snaps=[{W:W.slice(),L:L.slice()}];
+  const gbOf=(a,b)=>Math.abs((W[a]-L[a])-(W[b]-L[b]))/2;
+  const conf=(a,b,type,out)=>{
+    const gb=gbOf(a,b),aw=win(s,a,b,r()<.5,r);
+    out.push({a,b,type,gb,aw});
+    if(aw){W[a]++;L[b]++}else{W[b]++;L[a]++}
+  };
+  const crossGame=t=>{const w=s[t]+(r()<.5?EDGE:-EDGE)+randn(r)*SPREAD>0;if(w)W[t]++;else L[t]++};
+  for(let d=0;d<base;d++){
+    const ids=shuffle([...Array(N).keys()],r),inC=[],cr=[];
+    for(const t of ids)(r()<pConf?inC:cr).push(t);
+    if(inC.length%2)cr.push(inC.pop());
+    const out=[];
+    for(let i=0;i<inC.length;i+=2)conf(inC[i],inC[i+1],'conf',out);
+    cr.forEach(crossGame);
+    days.push({games:out,cross:cr.length});snaps.push({W:W.slice(),L:L.slice()});
+  }
+  let mStart=days.length;
+  if(design==='C'&&K>0){
+    const order=[...Array(N).keys()].sort((a,b)=>(W[b]-W[a])||(r()-.5));
+    const edges=shuffle(matchEdges(order,K,r),r),rds=[];
+    for(const [a,b] of edges){
+      const rd=rds.find(x=>!x.u.has(a)&&!x.u.has(b));
+      if(rd){rd.u.add(a);rd.u.add(b);rd.g.push([a,b])}else rds.push({u:new Set([a,b]),g:[[a,b]]});
+    }
+    for(const rd of rds){const out=[];rd.g.forEach(([a,b])=>conf(a,b,'matched',out));days.push({games:out,cross:0});snaps.push({W:W.slice(),L:L.slice()})}
+  }
+  return {days,snaps,s,mStart,design,K};
+}
+function shareOf(se,gap){
+  const T=se.days.length,start=Math.ceil(T*2/3);let D=0,E=0,X=0;
+  for(let d=start;d<T;d++){for(const g of se.days[d].games){E++;if(g.gb<=gap)D++}X+=se.days[d].cross}
+  return {pct:100*2*D/(2*E+X),D,start};
+}
+const gapFor=d=>d==='B'?0.5:1;   // 72/82 = 0.88 can only act as 0.5 in half-game steps
+
+/* ---------- watch panel ---------- */
+let SE=null;
+function build(){
+  SE=season(S.design,S.design==='C'?S.K:0,S.seed);
+  const T=SE.days.length;
+  S.t=T;$('scrub').max=T;$('scrub').value=T;
+  stopPlay();drawStrip();drawLadder();
+  $('agg').textContent='';
+}
+function stopPlay(){S.playing=false;clearInterval(S.timer);$('play').textContent='Play'}
+function lastThirdStart(){return Math.ceil(SE.days.length*2/3)}
+function drawStrip(){
+  const T=SE.days.length,g=gapFor(SE.design),W=520,H=96,pt=8,pb=18,bw=W/T;
+  const counts=SE.days.map(d=>d.games.filter(x=>x.gb<=g).length),m=Math.max(4,...counts);
+  const y=v=>H-pb-(v/m)*(H-pb-pt),st=lastThirdStart();
+  let h='<rect x="'+(st*bw)+'" y="0" width="'+(W-st*bw)+'" height="'+(H-pb)+'" fill="var(--accent-soft)"/>';
+  if(SE.design==='C'&&S.K>0)h+='<rect x="'+(SE.mStart*bw)+'" y="'+(H-pb)+'" width="'+(W-SE.mStart*bw)+'" height="4" fill="var(--accent)"/><text x="'+(SE.mStart*bw)+'" y="'+(H-2)+'" font-size="10" fill="var(--muted)">matched games</text>';
+  h+='<text x="'+(st*bw+3)+'" y="12" font-size="10" fill="var(--muted)">last third</text>';
+  counts.forEach((c,i)=>{if(c)h+='<rect x="'+(i*bw+.5)+'" y="'+y(c)+'" width="'+Math.max(1,bw-1)+'" height="'+(H-pb-y(c))+'" fill="'+(i>=st?'var(--accent)':'var(--bar)')+'"/>'});
+  h+='<line x1="0" x2="'+W+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'" stroke="var(--line)"/><line id="cur" x1="0" x2="0" y1="0" y2="'+(H-pb)+'" stroke="var(--ink)" stroke-width="1.5"/>';
+  $('strip').innerHTML=h;
+}
+const ladder=$('ladder');
+(function initLadder(){
+  for(let i=0;i<N;i++){
+    const d=document.createElement('div');d.className='lrow';d.id='lr'+i;
+    d.innerHTML='<span class="ab"></span><span class="bar"><span></span></span><span class="wl"></span>';ladder.appendChild(d);
+  }
+  const c1=document.createElement('div');c1.className='cut';c1.style.top=(6*28-1)+'px';
+  const c2=document.createElement('div');c2.className='cut';c2.style.top=(10*28-1)+'px';
+  ladder.append(c1,c2);
+})();
+function drawLadder(){
+  const t=S.t,snap=SE.snaps[t],T=SE.days.length;
+  const order=[...Array(N).keys()].sort((a,b)=>(snap.W[b]-snap.W[a])||(a-b));
+  const hot=new Set(),g=gapFor(SE.design);
+  if(t>0)for(const x of SE.days[t-1].games)if(x.gb<=g){hot.add(x.a);hot.add(x.b)}
+  const per=SE.design==='B'?72:82,scale=per*0.78;
+  order.forEach((team,pos)=>{
+    const el=$('lr'+team);el.style.transform='translateY('+pos*28+'px)';
+    el.classList.toggle('hot',hot.has(team));
+    el.children[0].textContent=ABBR[team];
+    el.children[1].firstChild.style.width=Math.min(100,snap.W[team]/scale*100)+'%';
+    el.children[2].textContent=snap.W[team]+'-'+snap.L[team];
+  });
+  const st=lastThirdStart(),sh=shareOf(SE,g);
+  let D=0;for(let d=st;d<Math.min(t,T);d++)for(const x of SE.days[d].games)if(x.gb<=g)D++;
+  $('t-count').textContent=D;
+  if(SE.design==='B'){const s2=shareOf(SE,1);$('t-share').textContent=sh.pct.toFixed(1)+'–'+s2.pct.toFixed(1)+'%';$('t-sharecap').textContent='Seed-race share, last third (0.5-game and 1-game readings)'}
+  else{$('t-share').textContent=sh.pct.toFixed(1)+'%';$('t-sharecap').textContent='Seed-race share, last third'}
+  $('readout').textContent='Round '+t+' of '+T+(t>=st?' · last third':'');
+  const x=T?t/T*520:0;const cur=$('cur');if(cur){cur.setAttribute('x1',x);cur.setAttribute('x2',x)}
+  $('scrub').value=t;
+}
+$('scrub').addEventListener('input',e=>{stopPlay();S.t=+e.target.value;drawLadder()});
+$('play').addEventListener('click',()=>{
+  if(S.playing){stopPlay();return}
+  const T=SE.days.length;if(S.t>=T)S.t=0;
+  S.playing=true;$('play').textContent='Pause';
+  clearInterval(S.timer);
+  S.timer=setInterval(()=>{S.t++;drawLadder();if(S.t>=T)stopPlay()},1000/+$('speed').value);
+});
+$('speed').addEventListener('change',()=>{if(S.playing){stopPlay();$('play').click()}});
+$('newseason').addEventListener('click',()=>{S.seed++;build()});
+$('run300').addEventListener('click',()=>{
+  const btn=$('run300');btn.disabled=true;$('agg').textContent='Running 300 seasons...';
+  setTimeout(()=>{
+    const K=S.design==='C'?S.K:0,gaps=S.design==='B'?[0.5,1]:[1],sum=gaps.map(()=>0),n=300;
+    for(let i=0;i<n;i++){const se=season(S.design,K,1000+i);gaps.forEach((g,j)=>sum[j]+=shareOf(se,g).pct)}
+    const avg=sum.map(x=>(x/n).toFixed(1));
+    $('agg').innerHTML='Average over 300 simulated seasons: <b>'+(S.design==='B'?avg[0]+'% (0.5-game gap) to '+avg[1]+'% (1-game gap)':avg[0]+'%')+'</b>. The main study simulation gave '+(S.design==='B'?RES.B[S.rule].lo.toFixed(1)+'% to '+RES.B[S.rule].hi.toFixed(1)+'%':(S.design==='C'&&S.K>0?RES.C[S.K].toFixed(1):BASE.toFixed(1))+'%')+'.';
+    btn.disabled=false;
+  },30);
+});
+
+/* ---------- wiring ---------- */
+function onDesign(){syncControls();renderRace();renderCost();build()}
+syncControls();renderRace();renderCost();build();
+})();
+</script>
+</body>
+</html>
