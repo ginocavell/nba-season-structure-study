@@ -6,9 +6,9 @@ A season-length and scheduling study. I used five seasons of real NBA games to t
 
 ## Links
 
-- **Written study:** [add link]
-- **Interactive simulator:** [add link]
-- **Spreadsheet (data cleaning and revenue model):** [add link]
+- **Written study:** [read the study](https://ginocavell.github.io/nba-season-structure-study/study.html)
+- **Interactive simulator:** [open the simulator](https://ginocavell.github.io/nba-season-structure-study/)
+- **Spreadsheet (data cleaning and revenue model):** [open the spreadsheet](https://docs.google.com/spreadsheets/d/1uEqaG4EatwY6mdqnjOoze7Ijbbew5FxRzjO0ZsuPntY/edit?usp=sharing)
 - **Simulation code:** `nba_season_study.ipynb` in this repository
 
 ## What I found
