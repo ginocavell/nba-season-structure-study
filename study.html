@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can the NBA Make Regular-Season Games Matter More?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffffff;--ink:#1b2027;--muted:#5a6572;--line:#dde1e6;--accent:#1f5fa8;--soft:#f3f5f8;--bar:#b7bfc9;--ref:#6b7480;
+--body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161b;--ink:#e6eaee;--muted:#9aa5b1;--line:#2a323b;--accent:#6aa6e8;--soft:#1a2028;--bar:#46515d;--ref:#8d97a3;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#12161b;--ink:#e6eaee;--muted:#9aa5b1;--line:#2a323b;--accent:#6aa6e8;--soft:#1a2028;--bar:#46515d;--ref:#8d97a3;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.65 var(--body);-webkit-font-smoothing:antialiased}
+article{max-width:740px;margin:0 auto;padding:40px 18px 80px}
+header{padding-bottom:20px;border-bottom:1px solid var(--line);margin-bottom:8px}
+h1{font:600 32px/1.2 var(--body);margin:0 0 10px;text-wrap:balance}
+.by{color:var(--muted);font-size:15px}
+.links{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.links a{font:500 14px var(--body);text-decoration:none;border:1px solid var(--line);padding:8px 12px;border-radius:4px;color:var(--ink)}
+.links a:hover{border-color:var(--accent);color:var(--accent)}
+h2{font:600 22px/1.3 var(--body);margin:44px 0 10px;text-wrap:balance}
+p{margin:0 0 14px}
+ul,ol{padding-left:1.3em;margin:0 0 16px}li{margin-bottom:6px}
+a{color:var(--accent)}
+.tw{overflow-x:auto;margin:0 0 20px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;line-height:1.45}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600}
+td{font-variant-numeric:tabular-nums}
+.chart{margin:22px 0}
+.chart svg{width:100%;height:auto;display:block}
+.chart figcaption{font-size:14px;color:var(--muted);margin-top:6px}
+.chart .bar{fill:var(--bar)}.chart .bar.hi{fill:var(--accent)}
+.chart .grid{stroke:var(--line);stroke-width:1}.chart .axis{stroke:var(--ref);stroke-width:1}
+.chart .ref{stroke:var(--ref);stroke-width:1.5;stroke-dasharray:5 4}
+.chart text{fill:var(--muted);font:12px var(--body)}
+.chart .val{fill:var(--ink);font:500 13px var(--mono)}
+.chart .reflab{font-size:12px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<article>
+<header>
+<h1>Can the NBA Make Regular-Season Games Matter More? A Season-Length and Scheduling Study</h1>
+<div class="by">By Gino Cavell · November 14, 2026</div>
+<nav class="links" aria-label="Project links">
+<a href="index.html">Open the interactive simulator</a>
+<a href="https://github.com/ginocavell/nba-season-structure-study">View the code and README on GitHub</a>
+</nav>
+</header>
+<h2>Summary</h2>
+<p>I tested whether the NBA could make late-season games matter more without hurting revenue. Cutting the season to 72 games did not help, so I changed course: keeping 82 games and ending the season with four standings-matched conference games raised the share of late games that are direct playoff-seed races from about 4% to 6.8% in my simulation, at roughly a twentieth of the cost of cutting games. Every number below comes from a simulation I calibrated on five real seasons, plus a revenue bridge built on public estimates.</p>
+<p><strong>What I found:</strong></p>
+<ol>
+<li><strong>A 72-game season does not make late races tighter.</strong> I predicted a gain of about 5 points before running anything, and that prediction was wrong.</li>
+<li><strong>Putting same-conference games at the end helps only a little.</strong> A block of 10 raised the direct-race share from 4.2% to 4.8%. It fixes which conference the opponent is in, not how close the two teams are, which caps the gain near 6.6%.</li>
+<li><strong>Matching opponents by standings is what works.</strong> Four final games against teams next to each other in the standings raised the share to 6.8%, about 1.6 times as many direct-race games.</li>
+<li><strong>The cost gap is large.</strong> Cutting to 72 games costs each team about $10.7M a year (range $2.0M to $19.4M). The matched finish costs about $0.5M ($0.13M to $1.5M).</li>
+<li><strong>What I could not test is whether closer races earn more.</strong> That link is the weak point of the whole case.</li>
+</ol>
+<p><strong>Could an end-of-season conference block raise viewership?</strong> My results give little reason to expect it from the block alone: it barely changes how many late games are real races (+0.6 points), and I had no viewership data to test it directly. A block made of standings-matched games raises closeness the most, but whether that turns into viewers is untested. It would only need matched games to earn 0.9% to 10.7% more than an average game to cover the lost NBA Cup money, which is why that link is the first thing to test next.</p>
+<p>The three designs I compared:</p>
+<ul>
+<li><strong>A: the current 82 games.</strong> The baseline.</li>
+<li><strong>B: a pure 72-game season</strong> (36 home games, 10 fewer games per team).</li>
+<li><strong>C: 78 base games plus 4 standings-matched conference games at the end, 82 total.</strong> The 4 matched games replace the 4 NBA Cup group games per team.</li>
+</ul>
+<div class="tw"><table>
+<thead>
+<tr>
+<th></th>
+<th>A: current 82</th>
+<th>B: 72 games</th>
+<th>C: 78 + 4 matched</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Late-season direct-race share (sim)</td>
+<td>4.3%</td>
+<td>2.8% to 5.0%</td>
+<td>6.8%</td>
+</tr>
+<tr>
+<td>Owners' net cost per team per year, base (low to high)</td>
+<td>$0</td>
+<td>$10.7M ($2.0M to $19.4M)</td>
+<td>$0.5M ($0.13M to $1.5M)</td>
+</tr>
+</tbody>
+</table></div>
+<p>My pre-set hypothesis that a 72-game season would raise the late-season share of games with both teams in a seed race by about 5 points was <strong>not supported</strong>. Design C's case depends on one link I could not test: that closer races earn more revenue. The break-even says matched games would need to earn 0.9% to 10.7% more than an average game to cover the lost Cup money. The Cup's value is not public, so my Cup figures are placeholders.</p>
+<h2>Background: why season length</h2>
+<p>My project began with a SportBusiness Media Rights Tracker 2026 chart showing basketball at 12.4% of global sports media rights value, against 38.6% for football and 19.3% for American football. When I researched the gap, scarcity stood out as the central difference: the NFL plays 17 games per team and the NBA plays 82, so each NFL game carries far more weight and draws a much larger audience (figures from my earlier research: about 17.5 million average viewers for the NFL against about 1.6 million for the NBA; approximate, not re-verified here).</p>
+<p>The NBA's new rights deal is worth about $76 billion over 11 years, <a href="https://www.nbcboston.com/news/business/money-report/official-nba-team-valuations-2025-heres-how-the-30-franchises-stack-up/3632769/">an average of $6.9 billion a year</a>, so the question is how to make an 82-game schedule feel less repetitive without costing the league money. The league has already tried several fixes: the 65-game rule for awards, the play-in tournament, the NBA Cup, and a 3-2-1 draft lottery approved on May 28, 2026 (effective with the 2027 draft).</p>
+<p>I asked two questions about a hypothetical shorter or restructured season:</p>
+<ol>
+<li>Does it raise the share of games that are meaningful?</li>
+<li>What does it cost, and how is that covered?</li>
+</ol>
+<h2>Study design: rules fixed before the results</h2>
+<p>I wrote down what counts as a "meaningful" game first, measured it on real data, and only then turned it into a hypothesis. Early in a season, meaning comes from rivalries, playoff history, contenders, and offseason drama. As the season goes on, record and standings take over, and a game between teams within about 2 games of each other matters most in the last third.</p>
+<p><strong>Metrics (all measured by thirds of the season; the last third is the focus):</strong></p>
+<ul>
+<li><strong>Tier A:</strong> same conference and within a set number of games of each other.</li>
+<li><strong>Tier B:</strong> both teams within the gap of the same line (6th/7th or 10th/11th seed).</li>
+<li><strong>Seed in motion:</strong> a team ranked 1 to 11 in its conference and within the gap of the seed directly above or below. "Both" means both teams in the game are in motion. This measure does not require the two teams to be in the same conference.</li>
+<li><strong>Direct race:</strong> the two teams are in the same conference and within the gap of each other. Added mid-study when the seed-in-motion measure proved blind to schedule composition.</li>
+</ul>
+<p><strong>Hypotheses:</strong></p>
+<ul>
+<li><strong>H1 (tested):</strong> in the last third of a 72-game season, the share of games with both teams in seed motion will be about 5 points higher than in an 82-game season (about 28% against 23%).</li>
+<li><strong>H2 (not tested, v2):</strong> with fewer games, stars play more of them, and healthier stars could make races tighter or spread them. This needs separate games-missed data.</li>
+</ul>
+<p><strong>Rules set in advance:</strong></p>
+<ul>
+<li>The comparison is simulated 72 against simulated 82, not simulated 72 against real 82.</li>
+<li>A fixed gap in games flatters a shorter season, so the gap was scaled by 72/82 (1 game becomes 0.88). Games-apart moves in half-game steps, so each 72-game result is bracketed between gaps of 0.5 and 1.0.</li>
+<li>H1 counts as supported only if both 72-game versions land at least 3 points above the simulated 82-game number. It is refuted if either lands within 1 point of it or lower. Anything between is weak.</li>
+<li>The simulation passes calibration if its 82-game share lands within 2 points of the real five-season average.</li>
+</ul>
+<h2>Data: five seasons, reconciled</h2>
+<p>My data are every regular-season game from 2021-22 through 2025-26, 1,230 games per season, which I copied from Basketball Reference into Google Sheets. Each season has a raw tab (untouched), a clean tab (play-in and playoff games removed, helper columns added), and a shared notes tab logging every decision, so any number can be traced to the step that produced it.</p>
+<p><strong>Checks run on every season:</strong></p>
+<ul>
+<li>Row count after removing the 52 header rows repeated inside the monthly tables: 1,230 games.</li>
+<li>First and last dates match the season (for example Oct 19, 2021 to Apr 10, 2022).</li>
+<li>Cleveland, used as the spot-check team, shows exactly 82 games.</li>
+<li>The NBA Cup championship game is excluded because it does not count as a regular-season game.</li>
+</ul>
+<p>I then ran the same data through a Python pipeline in Colab, which re-derived the standings game by game. Its guards stop the run if a season does not have exactly 1,230 games, 30 teams, and 15 East teams. The Sheets and Python results agreed for every season.</p>
+<h2>Baseline: what 82 games look like today</h2>
+<p>In the real five seasons, the share of games with both teams in seed motion (gap of 1 game) averaged <strong>23.6%</strong> in the last third of the season. The shares fall as the season goes on for the tier measures, which cuts against the intuition that races tighten late.</p>
+<ul>
+<li><strong>Tier A</strong> (same conference, within the gap) peaked early, because every team starts the season at the same record.</li>
+<li><strong>Tier B</strong> was predicted to hold up late and did not. It shrank like Tier A, to about 15% in the last third. That prediction was wrong.</li>
+<li><strong>Ceilings limit what a schedule can do. The share of games that can qualify is capped by the standings: even if every late game were same-conference, the direct-race share could not exceed about 6.6%.</strong></li>
+<li><strong>Direct race</strong> (same conference, within 1 game) was <strong>5.1%</strong> in the last third, so about 1 late game in 20.</li>
+</ul>
+<h2>Simulation: three inputs measured from real games</h2>
+<p>The simulation replays a real season's schedule with random results, using three numbers estimated from the data:</p>
+<ul>
+<li><strong>Team strength:</strong> average point margin per game. In 2025-26 it ran from +11.1 (Oklahoma City) to -12.0 (Washington), and the 30 margins sum to zero.</li>
+<li><strong>Home edge:</strong> about +2 points. It measured 1.6 to 2.5 across the five seasons.</li>
+<li><strong>Randomness:</strong> about 13.5 points. The raw game-to-game spread is 15.3 to 16.4 points, but that includes real mismatches, so the spread left after subtracting each game's expected margin (12.5 to 14.1 across seasons) is the right input.</li>
+</ul>
+<p>The chance a team wins is read off a bell curve of (strength gap plus home edge) divided by that 13.5. For example, Oklahoma City had roughly a 96% chance against Washington, and a +11 team wins about 82% of its games against an average opponent.</p>
+<p><strong>Calibration against real results:</strong></p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Real</th>
+<th>Simulated</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spread of win totals, 2025-26</td>
+<td>13.84</td>
+<td>13.95 average over 500 seasons (range 12.45 to 15.84)</td>
+<td>Pass</td>
+</tr>
+<tr>
+<td>Seed-in-motion share, last third, gap 1</td>
+<td>23.6%</td>
+<td>22.2%</td>
+<td>Pass, within 2 points</td>
+</tr>
+<tr>
+<td>Direct-race share, last third, gap 1</td>
+<td>5.1%</td>
+<td>4.2%</td>
+<td>Runs about 18% low</td>
+</tr>
+</tbody>
+</table></div>
+<p>Two caveats: strengths are measured on the same season being simulated, which slightly understates the true randomness, and the simulation runs a little less tight than reality on the direct-race measure. For that reason the results are read as comparisons between designs, not as forecasts.</p>
+<h2>Results: season length alone changes little</h2>
+<p>Across 100 to 150 simulated seasons per variant, shortening the season to 72 games did not move the seed-in-motion share in a way the measure could separate from its own rounding, and no way of choosing which 10 games to cut changed it. All numbers are the last third of the season.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Seed-in-motion, both teams (gap 0.5 / gap 1.0)</th>
+<th>Direct race (gap 0.5 / gap 1.0)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>82 games (simulated)</td>
+<td>22.6% at gap 1</td>
+<td>4.2% at gap 1</td>
+</tr>
+<tr>
+<td>72 games, random cut</td>
+<td>14.0% / 25.3%</td>
+<td>2.8% / 5.0%</td>
+</tr>
+<tr>
+<td>72 games, cross-conference games cut first</td>
+<td>14.2% / 25.2%</td>
+<td>3.1% / 5.5%</td>
+</tr>
+<tr>
+<td>72 games, conference games only cut (the Cup-cut idea)</td>
+<td>14.1% / 25.3%</td>
+<td>2.5% / 4.3%</td>
+</tr>
+</tbody>
+</table></div>
+<ul>
+<li><strong>H1 was not supported.</strong> The 1.0 version landed 2.7 points above the 82-game number (the rule required 3), and the 0.5 version landed 8.6 points below it.</li>
+<li><strong>The two gap versions disagree because of rounding.</strong> A scaled gap of 0.88 games is not a value the standings can take, so it behaves like 0.5 (too strict) or 1.0 (too generous). If the line between them is read as smooth, the fair answer is about 22.6%, the same as 82 games. That reading is rough.</li>
+<li><strong>Seed-in-motion cannot see the schedule's composition.</strong> It checks each team against the seeds next to it in its own conference, so East-West games count as much as conference games. The cut rules made no difference to it for that reason. The direct-race measure, which requires the same conference, was added to fix this. On it, cutting cross-conference games first scores highest and cutting conference games scores lowest.</li>
+</ul>
+<p><strong>An end-of-season block of same-conference games</strong> (every team's last N games all against its own conference, 82 games total) raised the direct-race share only modestly, and left seed-in-motion flat (22.2% to 22.5%), as expected:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Last N games all same-conference</th>
+<th>0</th>
+<th>6</th>
+<th>10</th>
+<th>14</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Direct-race share</td>
+<td>4.2%</td>
+<td>4.7%</td>
+<td>4.8%</td>
+<td>5.1%</td>
+</tr>
+</tbody>
+</table></div>
+<p>The block controls which conference the opponent is in, not how close the two teams are in the standings, so it cannot lift the share past about 6.6%. The prediction of +2 to +3 points at N = 10 was wrong; the result was about +0.6. So ordering games alone adds little; the gain comes from who plays whom, which is what design C changes.</p>
+<p><strong>Field lock.</strong> The share of the season left when the top-6 playoff group is mathematically locked was 1.6% for 82 games, 82 games plus a 10-game block, and 72 games alike, and the top-10 group locked at 3.1% to 3.2%. The measure hits a ceiling: the field stays open until about the last week in every version, so it cannot separate designs.</p>
+<h2>Redesign: a standings-matched finish (design C)</h2>
+<p>Design C keeps 82 games. Each team plays 82 minus K base games, with K same-conference games cut from its real schedule, followed by K final conference games against teams near it in the standings. K = 4 replaces the Cup's four group games per team one for one.</p>
+<p>After the base games, each conference is ranked by wins and the 15 teams are paired so each plays K opponents once, choosing the closest seeds available. Results use the same team strengths as before.</p>
+<figure class="chart"><svg viewBox="0 0 720 334" role="img" aria-label="Late-season direct-race share by number of matched games per team: 4.3% at zero, 6.5% at two, 6.8% at four, 6.4% at six, 6.4% at eight, 5.7% at ten."><title>Direct-race share by matched games per team (K)</title><line class="grid" x1="56" x2="690" y1="220.0" y2="220.0"/><text class="tick" x="48" y="224.0" text-anchor="end">2%</text><line class="grid" x1="56" x2="690" y1="160.0" y2="160.0"/><text class="tick" x="48" y="164.0" text-anchor="end">4%</text><line class="grid" x1="56" x2="690" y1="100.0" y2="100.0"/><text class="tick" x="48" y="104.0" text-anchor="end">6%</text><line class="grid" x1="56" x2="690" y1="40.0" y2="40.0"/><text class="tick" x="48" y="44.0" text-anchor="end">8%</text><line class="ref" x1="56" x2="690" y1="151.0" y2="151.0"/><rect class="bar" x="79.8" y="151.0" width="58.1" height="129.0"><title>K = 0: 4.3%</title></rect><text class="val" x="108.8" y="144.0" text-anchor="middle">4.3%</text><text class="tick" x="108.8" y="300" text-anchor="middle">0 (current)</text><rect class="bar" x="185.4" y="85.0" width="58.1" height="195.0"><title>K = 2: 6.5%</title></rect><text class="val" x="214.5" y="78.0" text-anchor="middle">6.5%</text><text class="tick" x="214.5" y="300" text-anchor="middle">2</text><rect class="bar hi" x="291.1" y="76.0" width="58.1" height="204.0"><title>K = 4: 6.8%</title></rect><text class="val" x="320.2" y="69.0" text-anchor="middle">6.8%</text><text class="tick" x="320.2" y="300" text-anchor="middle">4</text><rect class="bar" x="396.8" y="88.0" width="58.1" height="192.0"><title>K = 6: 6.4%</title></rect><text class="val" x="425.8" y="81.0" text-anchor="middle">6.4%</text><text class="tick" x="425.8" y="300" text-anchor="middle">6</text><rect class="bar" x="502.4" y="88.0" width="58.1" height="192.0"><title>K = 8: 6.4%</title></rect><text class="val" x="531.5" y="81.0" text-anchor="middle">6.4%</text><text class="tick" x="531.5" y="300" text-anchor="middle">8</text><rect class="bar" x="608.1" y="109.0" width="58.1" height="171.0"><title>K = 10: 5.7%</title></rect><text class="val" x="637.2" y="102.0" text-anchor="middle">5.7%</text><text class="tick" x="637.2" y="300" text-anchor="middle">10</text><line class="axis" x1="56" x2="690" y1="280" y2="280"/><text class="tick" x="373.0" y="328" text-anchor="middle">Standings-matched games per team (K)</text></svg><figcaption>Four standings-matched games lift late-season direct races from 4.3% to 6.8%. Share of last-third games between same-conference teams within 1 game, by matched games per team. The dashed line marks the current 82-game schedule (4.3%). Simulation: 75 seasons per K, 2021-22 to 2025-26 schedules.</figcaption></figure>
+<p>Any K from 2 to 8 captures most of the gain, and K = 4 is the top of a plateau, not a proven winner: 6.5%, 6.8%, 6.4%, and 6.4% for K = 2, 4, 6, and 8 are within the simulation's noise. The 10-game version scored lowest of the matched designs. With 10 of 14 possible opponents, almost everyone plays almost everyone, so matched opponents averaged 4.6 seeds apart, only slightly closer than random pairings (5.3). At K = 4 they averaged 2.6 apart. The seed-in-motion share also rose, from 22.2% to between 23.5% and 24.3%. The simulation runs about 18% low on the direct-race measure, so these are comparisons between designs, not forecasts.</p>
+<h2>Revenue bridge: B costs $2M to $19M per team, C costs under $2M</h2>
+<p>The bridge starts from the league's projected revenue and asks what each design changes, line by line. All figures are public estimates, since team revenue is not public, and every assumption below is labeled as one.</p>
+<p><strong>Starting point (per season).</strong> The league projected <a href="https://www.hoopsrumors.com/2025/11/nba-projecting-14-3-billion-in-revenue-for-2025-26-season.html">$14.3 billion</a> in total revenue for 2025-26, about $477 million per team. National media is about $6.9 billion a year, split equally among the 30 teams. Gameday revenue is a range because sources conflict: $2.5 billion (about 22% of revenue in 2023-24) to about $4 billion. Players receive about 50% of basketball-related income, which is roughly 80% of total revenue, so about 40% of any revenue change flows to players (a rough assumption).</p>
+<p><strong>Design B (72 games, 5 fewer home games per team).</strong> With nothing else changing, the loss is 12.2% of gameday revenue, or 2.1% to 3.4% of total revenue. The real answer depends on whether other lines also shrink with fewer games, so I ran three scenarios:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Share of national media, sponsorship, and other revenue that scales with games</th>
+<th>Ticket price recovery</th>
+<th>Owners' net loss per team</th>
+<th>As share of revenue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Low loss</td>
+<td>0%</td>
+<td>75%</td>
+<td>$2.0M</td>
+<td>0.4%</td>
+</tr>
+<tr>
+<td>Base</td>
+<td>25%</td>
+<td>50%</td>
+<td>$10.7M</td>
+<td>2.2%</td>
+</tr>
+<tr>
+<td>High loss</td>
+<td>50%</td>
+<td>25%</td>
+<td>$19.4M</td>
+<td>4.1%</td>
+</tr>
+</tbody>
+</table></div>
+<p>If every line scaled fully with games, the loss would be 12.2%. National media is the swing factor: it alone adds 5.9 of those points. The league could cut the 10 games from the roughly 80% of games that are not national broadcasts, which makes a fixed national package plausible, but the contract terms were not available. Fully recovering lost gameday revenue would take a 13.9% ticket price rise at constant attendance (41 / 36 - 1).</p>
+<p><strong>Design C (82 games, 4 Cup group games replaced by 4 standings-matched games).</strong> The gate stays flat. The question is the Cup. The sponsor's fee is not public, and one reported figure of $500 million a year is the airline's own estimate of advertising value, not the fee. The deal also covers referee jersey patches, so only part belongs to the Cup. I therefore used placeholders for the Cup's value to the league ($25M, $50M, $100M) with 75%, 50%, and 25% recovered by a sponsored replacement event:</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Owners' net loss per team</th>
+<th>Break-even extra revenue per matched game</th>
+<th>As share of an average game's revenue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Low loss</td>
+<td>$0.13M</td>
+<td>$0.10M</td>
+<td>0.9%</td>
+</tr>
+<tr>
+<td>Base</td>
+<td>$0.50M</td>
+<td>$0.42M</td>
+<td>3.6%</td>
+</tr>
+<tr>
+<td>High loss</td>
+<td>$1.5M</td>
+<td>$1.25M</td>
+<td>10.7%</td>
+</tr>
+</tbody>
+</table></div>
+<p>C's worst case (about $45M league-wide) costs less than B's best case (about $59M). The Cup would need to be worth over $1 billion a year before C cost as much as B's base case.</p>
+<p><strong>Sensitivity.</strong> The break-even rises with the Cup's value and falls with recovery. At a $100M Cup with no recovery, matched games would need to earn 14.3% more than an average game; at $200M it is 28.7%. The design survives unless the Cup is worth more than about $105M and a replacement event recovers little.</p>
+<p>The average revenue per game ($11.6M) used for the last column is a rough league-wide figure that includes media and playoff money, so it is context, not a measurement.</p>
+<h2>Mistakes, corrections, and pivots</h2>
+<p>The most useful findings came from errors that were caught by checks or by a result that contradicted a prediction. Each row below changed what was measured or how.</p>
+<div class="tw"><table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>What went wrong</th>
+<th>How it was caught</th>
+<th>What changed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data</td>
+<td>Row total of 1,331 against an expected 1,237</td>
+<td>Reconciliation against the monthly tables</td>
+<td>52 repeated header rows found and removed; 1,282 minus 52 gives 1,230</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>Header row sorted to the bottom of a tab</td>
+<td>Row count check showed 1,231</td>
+<td>Header copied above row 1 and frozen before sorting</td>
+</tr>
+<tr>
+<td>Summary tab</td>
+<td>Counted Tier A games where same-conference games were meant (780 instead of 252)</td>
+<td>Total did not match the sum of the games</td>
+<td>Formula pointed at the same-conference column</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>Stray formula-only row gave a 31st team</td>
+<td>Guard on 1,230 games and 30 teams stopped the run</td>
+<td>Guard now drops rows with no team names</td>
+</tr>
+<tr>
+<td>Baseline</td>
+<td>Predicted Tier B would hold up late</td>
+<td>Data showed it shrank like Tier A</td>
+<td>Prediction recorded as wrong</td>
+</tr>
+<tr>
+<td>Design</td>
+<td>A fixed gap in games flatters a shorter season</td>
+<td>Reasoning before the 72-game run</td>
+<td>Gap scaled by 72/82 and bracketed</td>
+</tr>
+<tr>
+<td>Results</td>
+<td>Half-game steps made the 72-game answer swing from 14.0% to 25.3%</td>
+<td>The pre-set bracket</td>
+<td>Reported as a band, not a point</td>
+</tr>
+<tr>
+<td>Results</td>
+<td>Assumed the seed-in-motion measure counts only same-conference games</td>
+<td>The three cut rules gave identical results</td>
+<td>Corrected: the claim was true only of Tier A. Direct-race measure added</td>
+</tr>
+<tr>
+<td>Results</td>
+<td>End-of-season block predicted at +2 to +3 points, measured +0.6</td>
+<td>Simulation</td>
+<td>Ceiling of about 6.6% identified; matching by standings tried instead</td>
+</tr>
+<tr>
+<td>Results</td>
+<td>Field-lock measure showed no difference between any variants</td>
+<td>Negative control (the block) also showed none</td>
+<td>Recognized as a ceiling; set aside</td>
+</tr>
+<tr>
+<td>Revenue</td>
+<td>A percent-formatted cell turned "1" into 1% instead of 100%</td>
+<td>Result was exactly 1/100 of the expected value</td>
+<td>Entered 100% explicitly</td>
+</tr>
+<tr>
+<td>Revenue</td>
+<td>I estimated a 9% to 15% loss from 10 fewer games</td>
+<td>Sheet gave 2.8%</td>
+<td>Only gameday (about a quarter of revenue) moves with games; 12.2% applies to that line alone</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Pivots.</strong> I started by testing a 72-game season. My simulation showed that cutting games barely moves the race measures, so I moved to an 82-game season with a standings-matched finish. A second pivot came from my idea of ending the season with a block of conference games, which led to testing both ordering and matching as separate levers.</p>
+<p><strong>Prediction record.</strong> Several predictions I made before running code were wrong, including H1, the Tier B prediction, the end-block size, the field-lock timing, and the revenue loss range. Writing predictions first made each miss visible and usable.</p>
+<h2>Limitations and next steps</h2>
+<p>My study shows that a standings-matched finish raises race closeness in a simulation. It does not show that closer races earn more money, and several of its inputs are assumptions.</p>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li><strong>Closeness is a proxy for meaning.</strong> It captures standings stakes only. Star availability, rivalries, and narrative are not measured.</li>
+<li><strong>The link from closeness to revenue is untested.</strong> Design C's case rests on the break-even, not on evidence that matched games would draw bigger audiences.</li>
+<li><strong>The Cup's value is not public.</strong> The $25M, $50M, and $100M figures are placeholders.</li>
+<li><strong>Revenue figures are estimates, from search-result excerpts and not full-page reads.</strong> Team revenue is not public, and gameday estimates differ by up to $1.5 billion across sources.</li>
+<li><strong>The simulation runs about 18% low on the direct-race measure</strong>, uses one schedule per season, and does not model rest, travel, or injuries. Matched games are played in a random order with random home and away.</li>
+<li><strong>Fairness:</strong> matching by standings gives top seeds a tougher late slate than bottom seeds, which pulls the standings together but also makes success harder to convert.</li>
+<li><strong>K must be even</strong>, because 15 teams cannot all play an odd number of games.</li>
+</ul>
+<p><strong>Next steps (v2):</strong></p>
+<ul>
+<li>Test H2: star availability and games missed, with a separate dataset.</li>
+<li>Add tanking, Cup stakes, and repeat-matchup fatigue.</li>
+<li>Add narrative flags (rivalry, contender, offseason drama) and validate them against national viewership, which would also test the closeness-to-revenue link.</li>
+</ul>
+<p><strong>Sources.</strong> Figures were taken from search-result excerpts; the pages were not each opened in full.</p>
+<ul>
+<li><a href="https://www.hoopsrumors.com/2025/11/nba-projecting-14-3-billion-in-revenue-for-2025-26-season.html">Hoops Rumors: NBA projecting $14.3 billion in revenue for 2025-26</a></li>
+<li><a href="https://www.nbcboston.com/news/business/money-report/official-nba-team-valuations-2025-heres-how-the-30-franchises-stack-up/3632769/">CNBC via NBC Boston: official NBA team valuations 2025</a></li>
+<li><a href="https://www.nbcchicago.com/news/business/money-report/official-nba-team-valuations-2025-heres-how-the-30-franchises-stack-up/3674654/">CNBC via NBC Chicago: national media split equally among teams</a></li>
+<li><a href="https://www.sportsvalue.com.br/en/special-us-leagues-nba-surpasses-mlb-and-becomes-the-worlds-second-richest-sports-league-with-us14-billion-in-revenue-nfl-remains-on-top-with-us23-billion/">Sports Value: NBA surpasses MLB with $14 billion in revenue</a></li>
+<li><a href="https://www.sportsvalue.com.br/en/nba-teams-surpassed-us-11-3-billion-in-revenue-in-2024-total-valuation-reached-us-132-8-billio">Sports Value: NBA teams surpassed $11.3 billion in revenue in 2024</a></li>
+<li><a href="https://en.ilsole24ore.com/art/new-york-knicks-and-the-nba-a-15-billion-global-sports-and-business-empire-AI5BcYfD">Il Sole 24 Ore: Knicks and the NBA, basketball-related income and the 51-49 split</a></li>
+<li><a href="https://zawya.com/en/business/aviation/emirates-airline-announces-global-partnership-with-nba-p9yia6se">Zawya: Emirates announces global partnership with NBA</a></li>
+<li><a href="https://bnnbloomberg.ca/business-of-sports/2024/11/13/nba-cup-in-season-tournament-flies-high">BNN Bloomberg: NBA Cup flies high</a></li>
+<li><a href="https://sg.news.yahoo.com/nba-announces-partnership-emirates-including-035500979.html">AP via Yahoo: NBA announces partnership with Emirates</a></li>
+<li><a href="https://pr.nba.com/2026-27-nba-regular-season-schedule/">NBA: 2026-27 regular season schedule release</a></li>
+<li><a href="https://www.wearebasket.net/explain-game-82-games-schedule/">WeAreBasket: Explain the Game, 82-game schedule</a></li>
+</ul>
+</article>
+</body>
+</html>
